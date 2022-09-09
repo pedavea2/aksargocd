@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: flask-app-container
-        image: kunchalavikram/gitops-demo-app:kube1
+        image: azureacr2504.azurecr.io:kube2
         ports:
         - containerPort: 5000
 ---
