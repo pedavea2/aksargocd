@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+    environment {
+        APP_NAME = "aksargocd"
+        }
+    stages {
+        stage('Cleanup Workspace'){
+            steps {
+                script {
+                    cleanWs()
+                }
+            }
+        }
+        stage('Checkout SCM'){
+            steps {
+                git credentialsId: 'github', 
+                url: 'https://github.com/pedavea2/argos-demo-config.git',
+                branch: 'master'
+            }
+        }
+        stage('Updating Kubernetes deployment file'){
+            steps {
+                sh "cat deployment.yml"
+                sh "sed -i 's/${APP_NAME}.*/${APP_NAME}:${IMAGE_TAG}/g' deployment.yml"
+                sh "cat deployment.yml"
+                }
+            }
+                stage('Push the changed deployment file to Git'){
+            steps {
+                script{
+                    sh """
+                    git config --global user.name "pedavelli@gmail.com"
+                    git config --global user.email "pedavelli@gmail.com"
+                    git add deployment.yml
+                    git commit -m 'Updated the deployment file' """
+                    withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'pass', usernameVariable: 'user')]) {
+                        sh "git push https://$user:$pass@github.com/pedavea2/argos-demo-config.git master"
+                    }
+                }
+            }
+        } 
+    }
+}

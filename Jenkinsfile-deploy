@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_USERNAME = "azureacr2504.azurecr.io"
+        registryUrl = "azureacr2504.azurecr.io"
+        APP_NAME = "aksargocd"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_NAME = "${DOCKERHUB_USERNAME}" + "/" + "${APP_NAME}"
+        REGISTRY_CREDS = "acr-credentials"
+        registryName = "azureacr2504"
+        registryCredential = 'acr-credentials'
+        }
+    stages {
+        stage('Cleanup Workspace'){
+            steps {
+                script {
+                    cleanWs()
+                }
+            }
+        }
+        stage('Checkout SCM'){
+            steps {
+                git credentialsId: 'github', 
+                url: 'https://github.com/pedavea2/aksargocd.git',
+                branch: 'main'
+            }
+        }
+        stage('Build Docker Image'){
+            steps {
+                script{
+                    docker_image = docker.build "${IMAGE_NAME}"
+                }
+            }
+        }
+        stage('Push Docker Image'){
+            steps {
+                script{
+                    docker.withRegistry( "http://${registryUrl}", registryCredential ) {
+                    docker_image.push("${BUILD_NUMBER}")
+                    docker_image.push('latest')
+                    }
+                }
+            }
+        } 
+        stage('Delete Docker Images'){
+            steps {
+                sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "docker rmi ${IMAGE_NAME}:latest"
+            }
+        }
+        stage('Triger Config change pipeline argocd-config'){
+            steps {
+                sh "curl -v -k --user anil:1196176c19d30c3152ebb601920bf574c5 -X POST -H 'cache-control: no-cahce' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'http://20.168.64.245:8080/job/argocd-config/buildWithParameters?token=gitops-config'"
+            }
+        }    
+    }
+}
