@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: flask-app-container
-        image: azureacr2504.azurecr.io/aksargocd:25
+        image: azureacr2504.azurecr.io/aksargocd:8
         ports:
         - containerPort: 5000
 ---
@@ -27,6 +27,6 @@ spec:
   ports:
   - port: 80
     targetPort: 5000
-    nodePort: 32000
+    nodePort: 32001
   selector:
     app: flask-app
